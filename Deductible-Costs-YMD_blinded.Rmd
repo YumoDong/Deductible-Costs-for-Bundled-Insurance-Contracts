@@ -1,0 +1,837 @@
+---
+title: |
+  Deductible Costs for Bundled Insurance Contracts
+author:
+ - name:
+   affil: 
+  
+affiliation:
+ - num: 
+      
+bibliography: ref.bib
+abstract: |
+ Bundled insurance contracts, providing protection based on several loss coverages, are attractive because they allow insurers to focus on the needs of the policyholder. A common contract feature is a deductible set so that the insurance pays the excess over the deductible of the sum of losses from all coverages; we refer to this as a "combined" deductible. Without combined deductibles, it is straightforward to value bundled insurance contracts as the sum of contracts from each supporting coverage. However, with combined deductibles, assumptions about the relationships among coverages become important. To demonstrate this importance, this paper evaluates the cost of combined deductibles under dependence using three applications in the areas of commercial insurance, reinsurance, and personal insurance. We find that the deductible costs can differ substantially (in some cases, over 20 percent) when copula dependence models are used, compared to the benchmark models that assume independence. A sensitivity analysis using simulations provides a sharper perspective on the importance of dependence relationships. This analysis suggests that the strength of dependence is more important than the type of copula dependence function. The paper supplements the findings from the simulation study with several theoretical propositions that show how dependence affects insurance pricing of combined deductibles.
+keywords: |
+  Dependence Modelling; Combined Deductible; Insurance Pricing; Copula; Simulation; Pet Insurance
+header-includes: |
+  \usepackage[font=small,format=plain,labelfont=bf,up,textfont=normal,up,justification=justified,singlelinecheck=false,labelsep=none]{caption}  
+  \usepackage{float} 
+  \usepackage{makecell}
+  \linespread{1.25}
+  \floatplacement{figure}{H}
+  \floatplacement{table}{H}
+  \usepackage[utf8]{inputenc}
+  \usepackage{booktabs}
+  \usepackage{longtable}
+  \usepackage{array}
+  \usepackage{multirow}
+  \usepackage{wrapfig} 
+  \usepackage{colortbl} 
+  \usepackage{pdflscape}
+  \usepackage{tabu} 
+  \usepackage{threeparttable} 
+  \usepackage{threeparttablex}
+  \usepackage[normalem]{ulem}
+  \usepackage{makecell} 
+  \usepackage{xcolor}
+  \usepackage{amsmath}
+  \usepackage[section]{placeins}
+  \usepackage[hidelinks]{hyperref}
+  \def\tightlist{}
+output: rticles::tf_article
+always_allow_html: true
+pdf_document:
+    latex_engine: xelatex
+    citation_package: biblatex
+    biblio-style: authoryear
+    keep_tex: TRUE
+    csl: apa.csl
+code_folding: hide
+fontsize: 12pt
+mainfont: "Times New Roman"
+---
+
+# INTRODUCTION  
+
+A deductible, a specific amount that a policyholder must spend before the insurance company starts to pay the costs, is a common feature of insurance contracts. Deductibles reduce premiums for the policyholders by eliminating a large number of small claims, the costs associated with handling these claims, and the potential moral hazard arising from having insurance; see, for example, @wang2008empirical. In effect, a deductible aligns insurers' and policyholders' interests so that both parties seek to mitigate the risk of losses.
+
+Traditionally, insurers offered a single contract for a single type of risk, starting coverages for caravans in ancient China and Mesopotamia. As insurance has evolved, insurers have become more customer-centric and offer to cover multiple risks under a single contract. This not only includes the so-called "all perils" policy under a homeowners insurance policy (covering several causes of loss) but also several risks that have traditionally been treated separately. One example is the "bundling" of auto and homeowners which has become commonplace in personal insurance market. For another example, within the U.S. healthcare industry [@barnett2016health], of the population with health insurance coverage in 2015, 78.4 percent had one coverage while 21.6 percent had multiple coverages. A traditional insurance contract only contains one coverage, whereas, in contrast, a bundled contract contains multiple coverages simultaneously. Insurers can reduce administrative costs, which is reflected in their pricing, by offering bundled coverages. Also, there are marketing advantages, customer retention benefits, and so forth, associated with bundling for insurers. Historically, insurers have been attracting customers to buy multiple coverages through the so-called "bundling" discount. This "bundling" discount is outside of our efforts because we focus on the "technical" costs and prices in this paper. When considering the bundled insurance, it is natural to think about commercial, reinsurance, and personal insurance. Table \ref{tab:inrpolicy} illustrates a few examples from personal insurance. For example, a policyholder can buy a customised travel insurance contract that includes both loss and damage of luggage as well as a personal injury coverage. Then for a claim made by a policyholder, the insurer may simultaneously observe two outcomes, one from each coverage.
+
+\renewcommand{\arraystretch}{1}
+```{r inrpolicy, echo=FALSE, include=TRUE,warning=FALSE, message=FALSE}
+library(dplyr)
+library(kableExtra)
+library(latex2exp)
+library(tidyverse)
+text_t <- data.frame(
+   Policy = c("Comprehensive Pet Plan", "Health Insurance Hospital","Home Buildings & Contents","Travel Insurance"),
+  Coverage = c("Accident, Illness", "Medical Treatments, Health Services, Overnight Accommodation, Nursing Care, etc", "Buildings, Contents", "Medical Expenses, Personal Baggage" ),
+ Deductible = c(
+    "$200 to $1000",
+    "$250 to $750", 
+    "$0 to $5000",
+    "$500 to $2000"
+    )
+)
+
+kable(text_t,caption = ' Personal bundled insurance contracts with combined deductibles.',col.names = c("Contract Name","Coverages","Combined Deductibles"),linesep = "",align=c("l","l","l")) %>%
+  kable_styling(full_width = F, font_size=9) %>%
+  column_spec(1, border_right = F,width = "12.5em") %>%
+  column_spec(2, width = "17em")%>%
+  row_spec(0,bold=TRUE) %>%
+  row_spec(1:3, hline_after = TRUE)
+```
+
+Different risk types have historically been treated separately, and this treatment has two important implications. First, it means that insurers are likely to retain data on each type of outcome even when bundled into a single insurance contract. Because the data are retained, it is natural to model their behaviour. Second, when risks are insured under different contracts, it is natural to model them separately, assuming no relationships between them and thus essentially means treating them as independent. In contrast, when several outcomes are included within a single contract, it is more natural to be concerned with their dependence. Broadly speaking, it is known that dependencies among interrelated outcomes can be important for quantifying financial implications of insurance contracts (see, for example, @yang2020nonparametric). In this paper, we consider the financial impact of deductible costs of a bundled insurance contract. We explicitly investigate the effect of dependencies on deductible costs through the analysis of applications in commercial insurance, reinsurance, and personal insurance.
+
+An interesting feature that often appears in bundled contracts is a deductible that covers multiple coverages. There are two kinds of deductibles in a bundled insurance contract that we call "split" and "combined". A split deductible is applied to an individual coverage or risk type, and a combined deductible is applied to the sum of multiple coverages in a bundled insurance contract. In practice, a combined deductible is widely used to define the potential costs undertaken by different parties involved in a bundled contract. Take the travel insurance with two coverages discussed earlier as an example. We define \(X_1\) as the loss of luggage damage and \(X_2\) as the loss of personal injury. Then, we could use \(S_1 =(X_1-d_1)_+\) to define the reimbursement covering the loss of luggage damage from an insurer. Here, $d_1$ is a split deductible as it applies only to luggage damage. In the same way, we define $S_2 = (X_2 - d_2)_+$ with $d_2$ being the split deductible that applies only to personal injury coverage. In this case, the pure premium of an insurance contract paid by a policyholder to an insurer is given by
+\begin{equation}
+    E(S_1+S_2)=E(X_1 - d_1)_+ +E(X_2 - d_2)_+.
+     \label{spl}
+\end{equation}
+When there is a combined deductible $d$ applying to the two risks $X_1$ and $X_2$, the bundled contract provides reimbursement in the amount of $(X_1 + X_2 - d)_+$ where \(d\) is the "combined deductible". The expected value of $(X_1+X_2)$ is given by
+\begin{equation}
+    E(X_1+X_2)=E(X_1+X_2-d)_+ +E\min(X_1+X_2,d),
+     \label{com}
+\end{equation}
+where $E(X_1+X_2-d)_+$ is the pure premium paid by a policyholder to an insurer, and $E\min(X_1+X_2,d)$ is the expected loss undertaken by the policyholder, which we call the deductible cost. When two split deductibles and a combined deductible are applied together, the pure premium paid by a policyholder to an insurer is $E(S_1+S_2-d)_+$, and $\big(E(X_1+X_2)-E(S_1+S_2-d)_+\big)$ is the expected loss undertaken by the policyholder according to Equations (\ref{spl}) and (\ref{com}).
+
+As noted above, our benchmark model assumes independence among the losses of different coverages when valuing bundled insurance contracts. The assumption of independence works well when only split deductibles are applied in bundled insurance contracts. For the travel insurance example, when two split deductibles are applied to each coverage respectively, the dependent and independent assumptions of $X_1$ and $X_2$ have indifferent pure premiums $E(S_1+S_2)$; see Equation (\ref{spl}). Therefore, when only split deductibles are used, the dependence does not matter for the pricing purpose, hence we will not consider split deductibles in this paper. A standard reference [such as @brown2015ratemaking; @lee2017general] on general insurance deductible pricing can be applied to each coverage in bundled contracts with only split deductibles. 
+
+The lack of independence can be important in the presence of combined deductibles. In this paper, we identify situations in which the independent assumption does not work well and introduce improved pricing models using copulas. For the travel insurance example, when there is a combined deductible $d$ in the contract (see Equation (\ref{com})), the dependence between $X_1$ and $X_2$ will lead to a different pure premium $E(X_1+X_2-d)_+$ compared to using the independent assumption of $X_1$ and $X_2$. In a pet insurance example in Section \ref{sec:app}, deductible costs are reduced by approximately 10 to 23 percent when dependence models are used, compared to the benchmark models that assume independence.
+
+The remainder of this paper is organised as follows. Following a short literature review in Section \ref{sec:LR} on dependence modelling in insurance pricing, in Section \ref{sec:app} we examine three practical applications (commercial insurance, reinsurance, and personal insurance) in which combined deductibles are regularly utilised. We find that an adjustment for dependence among coverages leads to materially different prices compared to the benchmark models that assume independence. The contracts studied in Section \ref{sec:app} focus on specific situations, so in Section \ref{sec:sim}, we describe sensitivity results using simulations. We find that the choices of dependence parameters, marginal distributions, and copulas all affect the deductible cost. Taking advantage of the well-known literature on stop-loss premiums, Section \ref{sec: prop} presents general properties of joint distributions that can lead to materially different prices and shows how the dependence structure affects insurance pricing of combined deductibles. Section \ref{sec:conclusion} offers some concluding remarks.
+
+# LITERATURE REVIEW
+\label{sec:LR}
+An extensive literature has been devoted to problems related to split deductible ratemaking, for example; see @brown2015ratemaking. @lee2017general discussed split deductible ratemaking considering both the regression approach and the maximum likelihood approach under the general insurance context. @ng2019generalized found that using the untransformed deductible as a covariate in a generalised linear model could improve accuracy in predicting relativities. However, to the best of our knowledge, there has been limited research considering the combined deductible ratemaking of bundled insurance contracts in the literature. Compared to split deductible ratemaking, combined deductible ratemaking requires dependence of multiple coverages to be taken into account. To show the importance of dependence for combined deductible ratemaking, we compare the deductible costs of copula models with those of benchmark models that assume independence, comonotonicity and countermonotonicity. This paper reduces the gap by investigating the combined deductible ratemaking from the perspectives of empirical analysis, simulations, and theoretical analysis. 
+
+Dependence modelling is important in the presence of combined deductibles, and we apply copulas in this paper to model the dependence of multiple risks. The concept of copulas, a tool for understanding relationships among multivariate outcomes,  was firstly introduced by @sklar1959fonctions in the context of probabilistic metric spaces. @frees1998understanding introduced actuaries to copulas by exploring some practical applications and describing basic properties, after which copulas have been widely used for dependence modelling in various actuarial applications. For example, @frees2005credibility and @frees2006copula developed a link between credibility and loss distributions through the notion of a copula, and showed the importance of dependence in credibility ratemaking. @shi2011dependent proposed a copula regression model for dependent lines of business that can be used to predict unpaid losses and hence determine loss reserves. 
+
+The stop-loss premium, a concept closely related to the deductible costs, has been studied extensively in the insurance literature and can be used in both stop-loss reinsurance contracts (between an insurer and a reinsurer) and insurance contracts with combined deductibles (between a policyholder and an insurer). @dhaene1996dependency and @dhaene1997dependency investigated how stop-loss premiums are influenced by changing the dependency assumptions between different risks. @muller1997stop showed that supermodular ordering implied stop-loss order of the portfolios. @denuit2001does showed that the sum of risks exhibiting a weak form of positive dependence was larger in convex order than the corresponding sum under the theoretical independence assumption. The literature above contributes to the theoretical foundation of the stop-loss premium, which can be extended to the deductible cost. Mathematically, the stop-loss premiums for reinsurance contracts and insurance contracts can be formulated and calculated in the same way. However, in practice, the combined deductible is usually placed at the right-tail of a loss distribution for reinsurance contracts while placed at the left-tail of a loss distribution for insurance contracts. In this paper, we will take advantage of the well-known literature on stop-loss premiums and provide several propositions on the impact of dependence on deductible costs.
+
+# APPLICATIONS ON CALCULATING DEDUCTIBLE COSTS
+\label{sec:app}
+
+In this section, we investigate the importance of dependence modelling for deductible costs using three insurance applications: commercial insurance, reinsurance, and personal insurance. To formalise the modelling framework, we consider an insurance (reinsurance) contract with $n$ coverages and a combined deductible $d$. Let $X_i$ ($i=1,...,n$) denote the loss of each coverage, and $S$ denote the aggregate loss $S=\sum_{i=1}^{n} X_i$. We start with the relationship including the combined deductible $d$,
+\begin{equation} 
+\begin{array}{l}
+\label{EXY}
+E(S) = E(S-d)_+ +  E \min(S, d).
+\end{array}
+\end{equation}
+Theoretically, Equation (\ref{EXY}) can be applied to both insurance and reinsurance contracts. We explain this equation in the following two scenarios. 
+
+In an insurance contract, $E(S-d)_+$ is the pure premium paid by a policyholder to an insurer, and $E \min(S, d)$ is the expected loss undertaken by the policyholder. In this case, $d$ is mostly placed at the left-tail of the distribution of the aggregate loss $S$. When the aggregate loss $S$ is smaller than $d$, the policyholder is responsible for paying all the loss; otherwise, the policyholder pays the amount of loss $d$, and the insurer pays the excess loss $S-d$. 
+
+In a reinsurance contract, $E(S-d)_+$ is called the stop-loss premium, which is the premium paid by an insurer to a reinsurer, and $E \min(S, d)$ is the expected loss undertaken by the insurer. In this case, $d$ is mostly placed at the right-tail of the distribution of the aggregate loss $S$. For example, an insurer buys stop-loss reinsurance for its portfolio to protect against large claims. When the aggregate loss $S$ of the insurer's portfolio is smaller than $d$, the insurer pays all the loss; otherwise, the insurer pays the amount of loss $d$, and the reinsurer pays the excess loss $S-d$. 
+
+In this paper, we focus on $E \min(S, d)$, which we call the deductible cost,
+\begin{equation}
+    c_d=E \min(S, d) = \int^d_0 [1-F_S(s)] ds.
+     \label{cd}
+\end{equation}
+The deductible cost $c_d$ depends on the cumulative distribution function of aggregate loss $F_S(s)$ as shown in Equation (\ref{cd}), which further depends on the joint distribution of $X_1, X_2, \dots X_n$, hence the dependence among the $n$ coverages. When $n=2$, we can follow the convolutional formula to calculate $F_S(s)$.
+\begin{equation*}
+\begin{array}{l}
+F_S(s) =   \int^{s}_0 \int^{s-x_1}_0 f_{X_1 X_2}(x_1,x_2) dx_2 \ dx_1,
+\end{array}
+\end{equation*}
+However, it quickly becomes difficult to calculate the deductible cost analytically when $n>2$. In this section, we will use empirical data sets and Monte Carlo simulations to calculate the deductible costs in different scenarios.
+
+To quantify the impact of dependence modelling on deductible costs, we define the cost relativity ($CR$) as
+\begin{equation} 
+\begin{array}{l}
+\label{k}
+CR = \cfrac{c_d^{dep}}{c_d^{ind}}-1,
+\end{array}
+\end{equation}
+where $c_d^{dep}$ and $c_d^{ind}$ denote the deductible costs of an insurance contract based on dependence and independence models, respectively. The larger is $|CR|$, the bigger is the difference in deductible costs between two models. We study $CR$ in three applications (commercial insurance, reinsurance, and personal insurance) to analyse the impact of dependence modelling on deductible costs. 
+
+The concepts of comonotonicity and countermonotonicity have been widely studied in economics, financial mathematics, and actuarial science; see @deelstra2011overview. Comonotonicity corresponds to the perfect positive dependence structure, while countermonotonicity corresponds to the perfect negative dependence structure. Comonotonicity/countermonotonicity is especially informative and useful to insurers in making conservative estimates about the risks and calculating premiums. Hence in Equation (\ref{k}), we can also replace $c_d^{ind}$ by $c_d^{co}$ for the deductible cost based on comonotonic scenario and $c_d^{counter}$ for the deductible cost based on countermonotonic scenario as additional benchmarks to understand the cost relativities. For readers interested in the comonotonic and countermonotonic scenarios, we provide results of three applications (commercial insurance, reinsurance, and personal insurance) in Section 6 of the supplementary material.
+
+For readers interested in a review of simulation calculations in simple settings, we refer to Section 1 of the supplementary material.
+
+\FloatBarrier
+
+
+## Application 1: Wisconsin Property Fund (Commercial)
+\label{sec:app1}
+This application is based on the application in @frees2016multivariate using a data set from the Wisconsin Local Government Property Insurance Fund (LGPIF). The contracts in the data set contain at most six coverages. In this paper, we only consider those contracts with all six coverages including building and content (BC), contractor's equipment (IM), comprehensive new vehicles (PN), comprehensive old vehicles (PO), collision new vehicles (CN), and collision old vehicles (CO). The marginal distribution of the loss for each coverage is modelled by a Tweedie distribution, and all marginal distributions are joined by a Gaussian copula. The Tweedie distribution is defined as a Poisson sum of gamma random variables. For information on the estimated marginal coefficients of the Tweedie model for each coverage, we refer to Table A11 in @frees2016multivariate. Table \ref{tab:tabDe} shows the estimated dependence parameters of the Gaussian copula for different coverages with Tweedie marginal distributions. 
+
+There is no combined deductible in the original bundled contracts, but we can still investigate the impact of dependence modelling on the deductible cost for risk managers interested in introducing this popular feature. The simplest way to introduce the combined deductible is offering a combined deductible $d$ to all six coverages. We choose to study this combined deductible on all six coverages for illustration purposes in this paper. However, for the purpose of the application, insurers can flexibly offer one or more combined deductibles to different combinations of coverages in a bundled insurance contract. For example, an insurer can offer a combined deductible $d_{auto}$ to the four auto coverages (PN, PO, CN, CO), and then a combined deductible $d$ to the whole contract. In this case, the insurer should cover the loss of $\big[X_{BC} + X_{IM} + (X_{PN} + X_{PO} + X_{CN} + X_{CO}-d_{auto})_{+} - d\big]_+$. This example of two combined deductibles is studied in Section 2 of the supplementary material for interested readers.
+
+We henceforth assume there is a combined deductible $d$ on the aggregate losses of six coverages. Considering the nature of these commercial contracts, we set the upper bound of the combined deductible to be \$10000. A higher upper bound makes it more flexible for commercial policyholders to customise their contracts with insurers.
+
+```{r tabDe,message = FALSE, warning=FALSE,echo=FALSE}
+# Summary of dependence parameters
+depP <- matrix(c("0.210","","","","",0.279,0.367,"","","",0.358,0.412,0.559,"","",0.265,0.266,0.553,0.328,"",0.417,0.359,0.496,0.562,0.573),nrow = 5,ncol = 5,byrow = TRUE)
+#names of risks
+rownames(depP) <- c("IM", "PN", "PO", "CN","CO")
+colnames(depP) <- c("BC","IM","PN","PO","CN")
+
+kable(format = "latex",depP,escape = FALSE,caption = ' Dependence parameters for tweedies.') %>%
+            kable_styling(full_width = F) %>%
+row_spec(0,bold=TRUE) 
+```
+
+In this case, we write the deductible cost as $$c_d =E~\min(X_{BC} + X_{IM} + X_{PN} + X_{PO} + X_{CN} + X_{CO}, d),$$ where $X_k$ is the loss of $k$-th coverage. It means that the insurer agrees to pay for the excess claim over the combined deductible $d$. 
+
+```{r phs, echo=FALSE, message = FALSE, warning=FALSE, fig.align='center', fig.height=4.25 ,out.width='100%',fig.cap=' \\ Cost Relativities of twenty-four policyholders from LGPIF.'}
+load("simulation1.RData")
+dparm<- 0:200*50 #deductible
+dparm[1]<-0.000001
+dparm[2]<-0.0001
+dparm[3]<-0.01
+#all 24 policyholders
+plot(dparm,LimitExp[,1]/LimitExpiid[,1]-1,type="l",lty=1,col="black",xlab="Combined Deductible: d ($)",ylab="CR",ylim=c(-0.30,0))
+
+lines(dparm,LimitExp[,2]/LimitExpiid[,2]-1,type="l",lty=1,col="red")  # show
+lines(dparm,LimitExp[,3]/LimitExpiid[,3]-1,type="l",lty=1,col="blue")
+lines(dparm,LimitExp[,4]/LimitExpiid[,4]-1,type="l",lty=1,col="green")
+lines(dparm,LimitExp[,5]/LimitExpiid[,5]-1,type="l",lty=1,col="orange")  # show
+lines(dparm,LimitExp[,6]/LimitExpiid[,6]-1,type="l",lty=1,col="yellow") 
+lines(dparm,LimitExp[,7]/LimitExpiid[,7]-1,type="l",lty=2,col="black")
+lines(dparm,LimitExp[,8]/LimitExpiid[,8]-1,type="l",lty=2,col="red")
+lines(dparm,LimitExp[,9]/LimitExpiid[,9]-1,type="l",lty=2,col="blue")
+lines(dparm,LimitExp[,10]/LimitExpiid[,10]-1,type="l",lty=2,col="green")
+lines(dparm,LimitExp[,11]/LimitExpiid[,11]-1,type="l",lty=2,col="orange")  # show
+lines(dparm,LimitExp[,12]/LimitExpiid[,12]-1,type="l",lty=2,col="yellow")
+lines(dparm,LimitExp[,13]/LimitExpiid[,13]-1,type="l",lty=3,col="black")
+lines(dparm,LimitExp[,14]/LimitExpiid[,14]-1,type="l",lty=3,col="red")   
+lines(dparm,LimitExp[,15]/LimitExpiid[,15]-1,type="l",lty=3,col="blue")  # show
+lines(dparm,LimitExp[,16]/LimitExpiid[,16]-1,type="l",lty=3,col="green")
+lines(dparm,LimitExp[,17]/LimitExpiid[,17]-1,type="l",lty=3,col="orange") # show
+lines(dparm,LimitExp[,18]/LimitExpiid[,18]-1,type="l",lty=3,col="yellow")
+lines(dparm,LimitExp[,19]/LimitExpiid[,19]-1,type="l",lty=4,col="black")  
+lines(dparm,LimitExp[,20]/LimitExpiid[,20]-1,type="l",lty=3,col="red")
+lines(dparm,LimitExp[,21]/LimitExpiid[,21]-1,type="l",lty=3,col="blue")
+lines(dparm,LimitExp[,22]/LimitExpiid[,22]-1,type="l",lty=3,col="green") 
+lines(dparm,LimitExp[,23]/LimitExpiid[,23]-1,type="l",lty=3,col="black")
+lines(dparm,LimitExp[,24]/LimitExpiid[,24]-1,type="l",lty=4,col="orange") 
+```
+
+Figure \ref{fig:phs} displays $CR$ of twenty-four policyholders, randomly chosen from all 244 policyholders who have six coverages in 2011. When the combined deductible $d$ is no more than \$10000, the $CR$ of each policyholder is negative. We further explain why $\lim_{d \to 0^+} CR$ is negative in Sections 3 of the supplementary material for interested readers. If we allow the combined deductible $d$ to approach infinity, then the $CR$ will tend to zero as $E~\min(X_{BC} + X_{IM} + X_{PN} + X_{PO} + X_{CN} + X_{CO}, \infty)= E(X_{BC}) + E(X_{IM}) + E(X_{PN})+E(X_{PO})+E(X_{CN})+E(X_{CO})$. In general, the deductible costs are reduced by approximately 6 to 23 percent when dependence models are used, compared to the benchmark models that assume independence. 
+
+We select four policyholders from the twenty-four policyholders who are most affected by the dependence modelling as examples. Their policy numbers are 140430, 160934, 160730, and 133640 (the bottom four curves in Figure \ref{fig:phs}). Figure \ref{fig:pandc} shows the premiums and deductible costs of these four policyholders. We can see that deductible costs increase with the increase of combined deductibles. We can also see that the premiums calculated by independence models are smaller than those calculated by dependence models, while the deductible costs calculated by independence models are larger than those calculated by dependence models. This explains the negative $CR$s we observed in Figure \ref{fig:phs}. We will further explain these observations using propositions in Section \ref{sec: prop}.
+
+```{r pandc, message = FALSE, warning=FALSE, fig.align='center',fig.height= 3.6, out.width='100%',echo = FALSE,fig.cap=' \\ Premiums and deductible costs of four policyholders (dependence: solid line, independence: dash line).'}
+par(fig=c(0,0.56,0,1), new=TRUE)
+
+plot(dparm,Epre[,1],type="l",lty=1,col="black",xlab="Combined Deductible: d ($)",ylab="$",main="Premiums",ylim=c(0,30000))
+lines(dparm,Epreiid[,1],col="black",lty=2)
+lines(dparm,Epre[,2],col="red",lty=1)
+lines(dparm,Epreiid[,2],col="red",lty=2)
+lines(dparm,Epre[,5],col="blue",lty=1)
+lines(dparm,Epreiid[,5],col="blue",lty=2)
+lines(dparm,Epre[,17],col="green",lty=1)
+lines(dparm,Epreiid[,17],col="green",lty=2)
+
+par(fig=c(0.44,1,0,1), new=TRUE)
+
+plot(dparm,LimitExp[,1],type="l",lty=1,col="black",xlab="Combined Deductible: d ($)",ylab="",main="Deductible Costs",ylim=c(0,8000))
+lines(dparm,LimitExpiid[,1],col="black",lty=2)
+lines(dparm,LimitExp[,2],col="red",lty=1)
+lines(dparm,LimitExpiid[,2],col="red",lty=2)
+lines(dparm,LimitExp[,5],col="blue",lty=1)
+lines(dparm,LimitExpiid[,5],col="blue",lty=2)
+lines(dparm,LimitExp[,17],col="green",lty=1)
+lines(dparm,LimitExpiid[,17],col="green",lty=2)
+legend("topleft", legend=c("140430","160934","160730","133640"),col=c("black","red","blue","green"),lty = c(1,1), cex=0.7,bty = "n")
+```
+
+
+A higher combined deductible may be selected in a more expensive insurance contract. We define the $d/P$ ratio to reflect this phenomenon,
+\begin{equation*} 
+\begin{array}{l}
+\label{d/P}
+d/P= \cfrac{d}{\text{Premium}_{d=0}} \times 100 \%,
+\end{array}
+\end{equation*}
+where $\text{Premium}_{d=0}$ is the premium of the policy without a deductible. The main reason we introduce $d/P$ is to measure the relative size of the combined deductible to the premium of a policy with no deductible ($\text{Premium}_{d=0}$). For example, Figure \ref{fig:ratio1} shows the differences in pricing between dependence and independence models, measured by $CR$ (see Equation (\ref{k})), with different levels of combined deductibles $d$ and $d/P$. 
+
+<!-- We show both the numerical values of combined deductibles (left plot) and the ratio $d/P$ (right panel). From both views, negative $CR$ implies the importance of modelling dependence between different coverages when calculating the deductible cost. -->
+
+```{r ratio1, message = FALSE, warning=FALSE, fig.align='center',fig.height= 3.6, out.width='100%',echo = FALSE,fig.cap=' \\ Cost Relativities of four policyholders by two forms of combined deductible.'}
+
+par(fig=c(0,0.56,0,1), new=TRUE)
+plot(dparm,LimitExp[,1]/LimitExpiid[,1]-1,type="l",lty=1,col="black",xlab="Combined Deductible: d ($)",ylab="CR",main="CR by d",ylim=c(-0.30,0))
+lines(dparm,LimitExp[,2]/LimitExpiid[,2]-1,type="l",lty=1,col="red")  # show
+lines(dparm,LimitExp[,5]/LimitExpiid[,5]-1,type="l",lty=1,col="blue")  # show
+lines(dparm,LimitExp[,17]/LimitExpiid[,17]-1,type="l",lty=1,col="green") # show
+
+par(fig=c(0.44,1,0,1), new=TRUE)
+plot(dparmpb/Epre[1,1]*100,LimitExppb[,1]/LimitExpiidpb[,1]-1,type="l",lty=1,col="black",xlab="d/P (%)",ylab="",main="CR by d/P (%) ",ylim=c(-0.30,0),xlim = c(0,150))
+lines(dparmpb/Epre[1,2]*100,LimitExppb[,2]/LimitExpiidpb[,2]-1,type="l",lty=1,col="red")  # show
+lines(dparmpb/Epre[1,5]*100,LimitExppb[,5]/LimitExpiidpb[,5]-1,type="l",lty=1,col="blue")  # show
+lines(dparmpb/Epre[1,17]*100,LimitExppb[,17]/LimitExpiidpb[,17]-1,type="l",lty=1,col="green") # show
+
+legend("topleft", legend=c("140430","160934","160730","133640"),col=c("black","red","blue","green"),lty = c(1,1), cex=0.7,bty = "n")
+```
+
+
+<!-- ### Loss Elimination Ratio -->
+
+Another way to examine the importance of dependence modelling is to calculate the indicated deductible relativity ($IDR$) and loss elimination ratio ($LER$). According to @lee2017general, the relationship between $LER$ and $IDR$ is given as
+\begin{equation*} 
+\begin{array}{l}
+\label{LER}
+LER(d) = \cfrac{c_d}{\text{Premium}_{d=0}}= 1-IDR(d).
+\end{array}
+\end{equation*}
+Actuaries use $IDR$ to assess how much an insurance loss cost is reduced by a deductible, from a per-loss perspective, and use $LER$ to assess how much the covered loss is reduced by introducing a deductible. In this case, we examine the difference in $LER(d)$ calculated by dependence and independence models.
+
+```{r LER, message = FALSE, warning=FALSE, fig.align='center',fig.height= 3.5, out.width='100%',echo = FALSE,fig.cap=' \\ LER of four policyholders by wwo forms of combined deductible (dependence: solid line, independence: dash line).'}
+
+par(fig=c(0,0.56,0,1), new=TRUE)
+
+plot(dparm,LimitExp[,1]/Epre[1,1],type="l",lty=1,col="black",xlab="Combined Deductible: d ($)",ylab="",main="LER (d)",ylim=c(0,0.7)) #dep
+lines(dparm,LimitExpiid[,1]/Epreiid[1,1],col="black",lty=2) #ind
+lines(dparm,LimitExp[,2]/Epre[1,2],type="l",lty=1,col="red")  # dep
+lines(dparm,LimitExpiid[,2]/Epreiid[1,2],col="red",lty=2) #ind
+lines(dparm,LimitExp[,5]/Epre[1,5],type="l",lty=1,col="blue")  # dep
+lines(dparm,LimitExpiid[,5]/Epreiid[1,5],col="blue",lty=2) #ind
+lines(dparm,LimitExp[,17]/Epre[1,17],type="l",lty=1,col="green") # dep
+lines(dparm,LimitExpiid[,17]/Epreiid[1,17],col="green",lty=2)
+par(fig=c(0.44,1,0,1), new=TRUE)
+
+plot(dparmpb/Epre[1,1]*100,LimitExppb[,1]/Epre[1,1],type="l",lty=1,col="black",xlab="d/P (%)",ylab="",main="LER (d)",ylim=c(0,0.7),xlim = c(0,150))
+lines(dparmpb/Epreiid[1,1]*100,LimitExpiidpb[,1]/Epreiid[1,1],type="l",lty=2,col="black")  # show
+lines(dparmpb/Epre[1,2]*100,LimitExppb[,2]/Epre[1,2],type="l",lty=1,col="red")  # show
+lines(dparmpb/Epreiid[1,2]*100,LimitExpiidpb[,2]/Epreiid[1,2],type="l",lty=2,col="red")  # show
+lines(dparmpb/Epre[1,5]*100,LimitExppb[,5]/Epre[1,5],type="l",lty=1,col="blue")  # show
+lines(dparmpb/Epreiid[1,5]*100,LimitExpiidpb[,5]/Epreiid[1,5],type="l",lty=2,col="blue")  # show
+lines(dparmpb/Epre[1,17]*100,LimitExppb[,17]/Epre[1,17],type="l",lty=1,col="green") # show
+lines(dparmpb/Epreiid[1,17]*100,LimitExpiidpb[,17]/Epreiid[1,17],type="l",lty=2,col="green")  # show
+
+legend("topleft", legend=c("140430","160934","160730","133640"),col=c("black","red","blue","green"),lty = c(1,1), cex=0.7,bty = "n")
+```
+
+From Figure \ref{fig:LER}, we see that a larger combined deductible or $d/P$ leads to a larger difference in $LER$ between dependence models and independence models. We select four $d/P$ ratios (25%, 50%, 75%, 100%) and show their corresponding $LER$s for the four policyholders in Table \ref{tab:LERdP}. We find that $LER$s calculated based on independence (in bracket) are larger than those based on dependence assumptions (out of bracket). This finding will be explained by Proposition \ref{th1} later. The differences in $LER$s provide further insights into the importance of dependence modelling. 
+
+```{r LERdP, message = FALSE, warning=FALSE,echo=FALSE}
+
+LERdp <- matrix(c("13.21 (16.48)", "23.12 (28.04)", "31.18 (36.74)", "37.98 (43.68)",
+                  "10.59 (13.64)", "19.36 (24.69)", "26.84 (33.81)", "33.36 (41.47)",
+                  "12.45 (15.86)", "22.62 (28.53)", "31.11 (38.71)", "38.32 (47.02)",
+                  "12.00 (14.90)", "21.08 (25.48)", "28.68 (33.79)", "35.17 (40.56)"),
+                nrow = 4,ncol=4, byrow = TRUE)
+
+#names of risks
+colnames(LERdp) <- c("d/P = 25%", "d/P = 50%", "d/P = 75%", "d/P = 100%")
+rownames(LERdp) <- c("140430","160934","160730","133640")
+
+kable(format = "latex", LERdp, escape = T,caption = ' Loss Elimination Ratio (\\%) of four policyholders by d/P (dependence: outside the brackets, independence: in the brackets).') %>%
+            kable_styling(full_width = F) %>%
+  column_spec(1, bold = F, border_right = F) %>%
+  row_spec(0, bold = T) 
+#save(dparm,sample24,simall, simallid, LimitExp,LimitExpiid,Epre,Epreiid,LimitExpiid,Prot,Protiid,CProt,CProtiid,dparmpb,LimitExppb,LimitExpiidpb,file = "simulation1.RData")
+```
+
+Adding a combined deductible to bundled contracts can eliminate a large number of small claims for insurers. For readers interested in what proportion of claims can be eliminated by certain combined deductibles, we refer to Section 4 of the supplementary material.
+
+\FloatBarrier
+
+## Application 2: Insurance Company Loss and Expense (Reinsurance)
+\label{sec:app2}
+This application is based on the work in @frees1998understanding who fit copulas (Gumbel and Frank) with Pareto marginal distributions to insurance company indemnity claims. The data used to calibrate a reinsurance contract comprises 1500 general liability claims randomly chosen from late settlement lags and is provided by Insurance Services Office, Inc. Each claim consists of an indemnity payment (the loss) and an allocated loss adjustment expense (ALAE). In this paper, we consider the excess-of-loss reinsurance and write the deductible cost as 
+$$c_d =E~\min(X_{loss} + X_{ALAE}, d),$$ 
+where $X_k$ is the severity (positive) of $k$-th coverage. It means that the reinsurer agrees to pay for each claim the excess over the combined deductible $d$. For the reinsurers, the combined deductible is naturally small compared to the loss they suffer. From the perspective of insurers, the combined deductible is the maximum loss they undertake, and is mostly applied to the right-tail of the aggregate loss distribution. Hence, commonly used risk measures (see, for example, @embrechts2011quantitative) for the right-tail, such as Value-at-Risk and stop-loss premium, can also be studied in this application. However, this paper focuses on the expected cost limited by the combined deductible, which is undertaken by insurers. Also, we only focus on the severity modelling in this case because the frequencies of the loss and ALAE are always the same. 
+
+The distribution functions of Gumbel copula, Frank copula, and Pareto distributions are listed in Table \ref{tab:GFP}, where $C(u,v)$ is a bivariate copula function and $F_X(x)$ is a cumulative distribution function. The scale parameter and shape parameter of the Pareto distribution are denoted by $\lambda$ and $\theta$ respectively.
+\renewcommand{\arraystretch}{2}
+```{r GFP, echo=FALSE, include=TRUE,warning=FALSE, message=FALSE}
+
+text_GFP <- data.frame(
+ Distributions = c("Gumbel Copula", "Frank Copula", "Pareto" ),
+ Functions = c("$C(u,v)=\\exp\\left(-\\left((-\\ln u)^\\theta + (-\\ln v)^\\theta\\right)^\\frac{1}{\\theta}\\right)$", "$C(u,v)=-\\cfrac{1}{\\theta} \\Big(1 + \\cfrac{(e^{-\\theta u } -1) (e^{-\\theta v } -1)}{e^{-\\theta} -1} \\Big)$","$F_X(x)=1-\\Big(\\cfrac{\\lambda}{\\lambda+x}\\Big)^\\theta$")
+)
+
+kable(format = "latex",text_GFP,escape=FALSE,caption = ' Reinsurance distribution functions.',col.names = c("Distributions","Functions"),linesep = "") %>%
+  kable_styling(full_width = F, font_size=9) %>%
+  column_spec(1, border_right = F,width = "8.5em") %>%
+  column_spec(2, border_right = F,width = "19.5em") %>%
+  row_spec(0,bold=TRUE) %>%
+  row_spec(1:2, hline_after = TRUE)
+```
+
+The estimated coefficients of Gumbel copula model and Frank copula model from @frees1998understanding are listed in Table \ref{tab:GandF}. The parameters of Pareto distributions for the loss and ALAE are $(\theta_1 ,\lambda_1)$ and $(\theta_2 ,\lambda_2)$ respectively.
+\renewcommand{\arraystretch}{1}
+```{r GandF, echo=FALSE, include=TRUE,warning=FALSE, message=FALSE}
+
+text_GF <- data.frame(
+   Parameters = c("Loss: $(\\lambda_1, \\theta_1) $", "ALAE: $(\\lambda_2, \\theta_2)$","Dependence Parameter $\\theta$"),
+ Gumbel = c("(14036, 1.122)", "(14219, 2.118)", "1.453" ),
+ Frank = c("(14558, 1.115)","(16678, 2.309)","3.158")
+)
+
+kable(format = "latex",text_GF,escape=FALSE,caption = ' Parameter estimates using Gumbel copula and Frank copula with Pareto marginals.',col.names = c("Parameters","Gumbel Model","Frank Model"),linesep = "") %>%
+  kable_styling(full_width = F, font_size=9) %>%
+  column_spec(1, border_right = F,width = "11.5em") %>%
+  row_spec(0,bold=TRUE) %>%
+  row_spec(1:2, hline_after = TRUE)
+```
+
+Although there is no combined deductible in the original contracts, to investigate the impact of dependence modelling on the deductible cost, we assume a combined deductible $d$ on the loss and ALAE. Considering this is a reinsurance contract, we set the combined deductible upper bound to be \$50000.
+
+```{r lae, message = FALSE, warning=FALSE, fig.align='center', fig.height= 3, out.width='100%', echo = FALSE,fig.cap=' \\ Severities, deductible costs, and Cost Relativities of Gumbel model and Frank model.'}
+        
+load("simulation2.RData")
+
+par(mfrow = c(1,3))
+plot(dlA,LlAp[,2],type="l",lty=1,col="blue",xlab="Combined Deductible: d ($)",ylab="$",main=" Severities",ylim=c(0,150000))
+lines(dlA,LlAp[,3],col="red")
+
+
+plot(dlA,LlA[,2],type="l",lty=2,col="blue",xlab="Combined Deductible: d ($)",ylab="$",main=" Deductible Costs",ylim=c(0,150000))
+lines(dlA,LlA[,3],col="red")
+
+plot(dlA,LlA[,2]/LlA[,1]-1,type="l",lty=1,col="blue",xlab="Combined Deductible: d ($)",ylab="CR",main="Cost Relativities",ylim=c(-0.1,0))
+lines(dlA,LlA[,3]/LlA[,1]-1,col="red")
+legend("topright", legend=c("Gumbel Copula","Frank copula"),col=c("blue","red"),lty = c(1,1), cex=0.95,bty = "n")
+```
+
+Figure \ref{fig:lae} depicts the severity, deductible costs, and cost relativity calculated by two types of copula models. In general, the choice of copulas affects the outcome since different copulas indicate different dependence structures. We will investigate the impact of copulas on the deductible costs in Section \ref{sec:DC} later. If we only consider the dependence of severity without the frequency between risks, the $CR$ tends to zero if the combined deductible $d$ tends to zero. This is the main difference between Application 2 and Application 1, as Application 2 focuses on severity modelling only.
+
+\FloatBarrier
+## Application 3: Quotes of a Pet Insurance Contract (Personal)
+\label{sec:app3}
+Relatively little literature has been published with respect to data analysis in the pet insurance market. One of the most valuable examples is @paipreliminary who studied the claim transactions data for dogs covered by a single Canadian pet insurer. This data set recorded 15029 individual dogs, 70 different types of accidents, 411 different types of illnesses, and two causes of death (by accident or by illness). Although the data set is not publicly available, we understand that claims are recorded by the types of illnesses and types of accidents in practice. 
+
+Since it is difficult to get claims data of a pet insurance contract, in this section, we calibrate models based on the online quotes of an accident and illness pet insurance provider who provides quotes with choices of four combined limits (\$5000, \$8000, \$10000, \$15000), five combined deductibles (\$200, \$300, \$500, \$750, \$1000) and three reimbursement rates (70%, 80%, 90%). We collect 60 quotes data online to calibrate the underlying parameters and distributions. The deductible cost is defined as $$c_d =E~\min(X_{illness} + X_{accident}, d),$$ where $X_k$ is the aggregate loss of $k$-th coverage group (illness and accident). It means that the insurer agrees to pay for each claim the excess over the combined deductible $d$.
+
+\FloatBarrier
+
+<!-- ### Online Quotes and Policy Features  -->
+
+Figure \ref{fig:orginal} shows the 60 data points collected from the insurer's website. We can see that holding else equal, a higher combined limit, a lower combined deductible, or a higher combined reimbursement rate will lead to a higher premium.
+
+```{r orginal, echo=FALSE,out.width='100%', fig.height=4, message = FALSE, warning=FALSE, fig.cap=' \\ Online quotes data of a pet insurance contract.'}
+load("simulation3.RData")
+#filter by Limits
+seq1<-seq(1,13,3)
+# by deductibles
+plot(order_data[seq1,3],order_data[seq1,5],xlab="Combined Deductibles: d ($)",col="#0B9007",ylab="Premium ($)",pch=0,ylim=c(0,1800)) # 5000 limit
+lines(order_data[seq1+1,3],order_data[seq1+1,5],type = "p",col="#0B9007",pch=1)#5000 limit
+lines(order_data[seq1+2,3],order_data[seq1+2,5],type = "p",col="#0B9007",pch=2)#5000 limit
+lines(order_data[seq1+15,3],order_data[seq1+15,5],type = "p",col="#2348E6",pch=0)#8000 limit
+lines(order_data[seq1+16,3],order_data[seq1+16,5],type = "p",col="#2348E6",pch=1)#8000 limit
+lines(order_data[seq1+17,3],order_data[seq1+17,5],type = "p",col="#2348E6",pch=2)#8000 limit
+lines(order_data[seq1+30,3],order_data[seq1+30,5],type = "p",col="#C3110B",pch=0)#10000 limit
+lines(order_data[seq1+31,3],order_data[seq1+31,5],type = "p",col="#C3110B",pch=1)#10000 limit
+lines(order_data[seq1+32,3],order_data[seq1+32,5],type = "p",col="#C3110B",pch=2)#10000 limit
+lines(order_data[seq1+45,3],order_data[seq1+45,5],type = "p",col="#E3B12D",pch=0)#15000 limit
+lines(order_data[seq1+46,3],order_data[seq1+46,5],type = "p",col="#E3B12D",pch=1)#15000 limit
+lines(order_data[seq1+47,3],order_data[seq1+47,5],type = "p",col="#E3B12D",pch=2)#15000 limit
+
+legend("topright",legend=c("Limit=15000","Limit=10000","Limit=8000","Limit=5000"),text.col=c("#E3B12D","#C3110B","#2348E6","#0B9007"),cex = 0.7,bty="n") #yellow red blue green
+
+legend("topleft", legend=c("Reimbursement Rate=0.9","Reimbursement Rate=0.8","Reimbursement Rate=0.7"),col=c("black","black","black"),lwd=1,lty=c(0,0,0),pch = c(2,1,0),cex=0.7,bty="n")
+
+```
+
+\FloatBarrier
+
+<!-- ### Models and Calibrated Parameters -->
+
+Based on practical pet insurance information [@Regutopet], we assume the probability of having at least one claim (illness and/or accident) per year is around 30% to 50% and that the frequency models for the illness and accident losses are distributed as $\text{Poisson}(\lambda=0.4)$ and $\text{Poisson}(\lambda=0.25)$, respectively. A bivariate Gaussian copula is used to model the dependence of the two risks (illness and accident). We consider the gamma distribution, the Pareto distribution, and the Weibull distribution as three candidates for the two marginal severity distributions. The probability density functions and the corresponding shape parameters and expected values are listed in Table \ref{tab:3candidates}. In total, five parameters need to be calibrated, including the dependence parameter of the Gaussian copula $\rho_S$ and four parameters of the two marginal severity distributions. 
+
+<!-- $\gamma(n)$ is the gamma function. The gamma function is defined for all complex numbers except the non-positive integers. For any positive integer $n$, $$\gamma(n)=(n-1)!$$. -->
+\renewcommand{\arraystretch}{2}
+```{r 3candidates, echo=FALSE, include=TRUE,warning=FALSE, message=FALSE}
+
+text_3c <- data.frame(
+ Distributions = c("gamma", "Weibull", "Pareto" ),
+ Functions = c("$f(x)= \\cfrac{x^{(a-1)} e^{-\\frac{x}{s}}}{s^a \\Gamma(a)}$",
+               "$f(x)=\\cfrac{a}{s} \\Big(\\cfrac{x}{s}\\Big)^{a-1} \\exp\\Big(-\\Big(\\cfrac{x}{s}\\Big)^a\\Big)$",
+               "$f(x) = \\cfrac{as^a}{(x+s)^{a+1}}$"),
+ Shape=c("$a$", "$a$", "$a$"),
+ Expectedvalue=c("$as$","$s \\Gamma \\Big(1 + \\cfrac{1}{a}\\Big)$","$\\cfrac{s}{a-1}$")
+)
+
+kable(format = "latex",text_3c,escape=FALSE,caption = ' Pet insurance distribution functions.',col.names = c("Distribution","Probability Density Function","Shape Parameter", "E(X)"),linesep = "",align=c("l","l","c","l")) %>%
+  kable_styling(full_width = F, font_size=9) %>%
+  column_spec(1, border_right = F,width = "6.5em") %>%
+  column_spec(2, border_right = F,width = "18.5em") %>%
+  row_spec(0,bold=TRUE) %>%
+  row_spec(1:2, hline_after = TRUE)
+```
+
+We consider four models with different combinations of marginal severity distributions, two Poisson marginal frequency distributions, and a Gaussian copula. The four models are listed as follows:
+
+1. Model 1 : $X_{illness} \sim \text{gamma}$, $X_{accident} \sim \text{gamma}$, Poisson frequency, $\text{Gaussian}$ copula.
+
+2. Model 2 : $X_{illness} \sim \text{gamma}$, $X_{accident} \sim \text{Pareto}$, Poisson frequency, $\text{Gaussian}$ copula.
+
+3. Model 3 : $X_{illness} \sim \text{gamma}$, $X_{accident} \sim \text{Weibull}$, Poisson frequency, $\text{Gaussian}$ copula.
+
+4. Model 4 : $X_{illness} \sim \text{Weibull}$, $X_{accident} \sim \text{Weibull}$, Poisson frequency, $\text{Gaussian}$ copula.
+
+We apply the mean absolute percentage error (MAPE) to measure the model performance
+$$\text{MAPE}=\cfrac{1}{n}\sum_{i=1}^n \left\lvert \cfrac{A_i-F_i}{A_i}\right\lvert,$$
+where $A_i$ is the actual value (quotes) and $F_i$ is the forecast value (estimated premium), and $n$ is the number of samples. We refer to Section 5 in the supplementary material for detailed steps of the calibration. The five calibrated parameters of the four models are listed in Table \ref{tab:Petpara}.
+\renewcommand{\arraystretch}{1}
+```{r Petpara, echo=FALSE, include=TRUE,warning=FALSE, message=FALSE}
+
+text_PP <- data.frame(
+   Parameters = c("$a$ ($X_{illness}$)", "E($X_{illness}$)","$a$ ($X_{accident}$)", "E($X_{accident}$)", "Dependence (Gaussian)"),
+ Model1 = c("20.00", "1166.80", "20.00","986.90","0.95"),
+ Model2 = c("20.00","1182.00","2.01","1049.00","0.40"),
+ Model3 = c("15.00","1177.30","10.00","969.00","0.95"),
+ Model4 = c("15.00","1131.70","15.00","1070.30","0.95")
+)
+
+kable(format = "latex",text_PP,escape=FALSE,caption = ' Five calibrated parameters of four pet insurance models.',col.names = c("Parameters"," Model 1"," Model 2"," Model 3"," Model 4"),linesep = "",align=c("l","r","r","r","r")) %>%
+  kable_styling(full_width = F, font_size=9) %>%
+  column_spec(1, border_right = F,width = "12.5em") %>%
+  row_spec(0,bold=TRUE) %>%
+  row_spec(1:4, hline_after = TRUE)
+```
+
+
+```{r 4coms, echo=FALSE,out.width='100%', fig.height=3.8, message = FALSE, warning=FALSE, fig.cap='\\ Cost Relativities of four pet insurance models.'}
+load("simulation2v2.RData")
+plot(dddog,Ldog[,1]/Ldogid[,1]-1,type="l",lty=1,col="black",xlab="Combined Deductible: d ($)",ylab="CR",ylim=c(-0.25,0) )
+lines(dddog,Ldog[,2]/Ldogid[,2]-1,col="red")
+lines(dddog,Ldog[,3]/Ldogid[,3]-1,col="blue")
+lines(dddog,Ldog[,4]/Ldogid[,4]-1,col="green")
+legend("topleft", legend=c("Model 1","Model 2","Model 3","Model 4"),col=c("black","red","blue","green"),lty = c(1,1), cex=0.85,bty="n")
+
+#save(dddog,Ldog,Ldogid,order_data,file = "simulation3.RData")
+```
+
+Figure \ref{fig:4coms} shows the calculated cost relativity using the fitting outcome of the four models. When the marginal distributions are gamma, Weibull, or the combination of gamma and Weibull distributions, the curves of $CR$ are similar (blue, black, and green curves). A special case is that when we use the combination of gamma and Pareto distributions (Model 2). Here, the red curve in Figure \ref{fig:4coms} is more linear and above the other three curves due to the difference in marginal distributions and a low dependence parameter of the Gaussian copula. We will investigate the impact of marginal distributions on the deductible costs in Section \ref{sec:CMD} later.
+
+## Summary of the Three Applications
+
+In the first application, combined deductibles are applied to commercial insurance contracts with six coverages. Deductible costs are reduced by approximately 6 to 23 percent, and loss elimination ratios are reduced by 3 to 9 percent in dependence models compared to the benchmark models that assume independence. 
+
+Reinsurance is discussed in the second application, where a combined deductible is applied to an indemnity payment and an allocated loss adjustment expense. We find the choice of copulas could lead to different deductible costs. Although an indemnity payment always comes with an allocated loss adjustment expense (the frequencies are the same for the two coverages), the difference in deductible costs between dependence and independence modelling could reach 8 percent.
+
+The third application is about personal insurance (i.e. the pet insurance). Deductible costs are reduced by approximately 10 to 23 percent when dependence models are used compared to the benchmark models that assume independence. Additionally, we find the choice of the marginal distributions of each coverage could impact the model outcome.
+
+According to the three applications, we also find that the ratio $CR$ is non-positive in all cases, and the deductible costs can be affected by the choice of copulas and marginal distributions. The results of these three applications shed light on the importance of dependence modelling for the calculation of deductible costs. 
+
+# SIMULATION STUDY
+\label{sec:sim}
+
+Motivated by the results of the three insurance applications in Section \ref{sec:app}, we further investigate how the dependence structure (dependence parameters and copulas) and marginal distributions could affect the deductible costs and $CR$ using Monte Carlo simulations. The number of simulations is discussed in Section 8 of the supplementary material.
+
+For simplicity, we consider a bivariate case with two risks $X_1$ and $X_2$ for severity modelling. Table \ref{tab:mar} summarises the four combinations of severity marginal distributions for $X_1$ and $X_2$. Marginal 1 (uniform distribution) is only for illustration and comparison purposes. Marginals 2 (gamma distribution), 3 (Pareto distribution), and 4 (Weibull distribution) are widely used in the severity analysis of insurance claims; see @gamma2013estimation, @teodorescu2006composite, and @ni2014bonus. The distribution functions of these four distributions are provided in Section 7 of the supplementary material. In all four cases, we set $E(X_1+X_2)=1000$ and the combined deductible ranges from 0 to 1000.
+
+<!-- There are two Data Generating Processes (DGP 1 and DGP 2) in the simulation study. Data generated from DGP 1 will be used in Section \ref{sec:BGCM}, Section \ref{sec:CMD}, and \ref{sec:LA}. Data generated from DGP 2 will be used in Section \ref{sec:DC}. To calculate $CR$ in Equation \ref{k}, we use Monte Carlo simulations to compute the deductible costs of the aggregate loss model. Details of the procedure can be found in the supplementary material Section 1.  -->
+
+
+
+```{r mar, echo=FALSE, include=TRUE,warning=FALSE, message=FALSE}
+
+text_mar <- data.frame(
+ Marginal = c("1","2", "3", "4" ),
+X = c("uniform (0, 1000)",
+               "gamma (1, 500)",
+               "Pareto (2, 400)",
+               "Weibull (0.5, 300)"),
+ Y =c("uniform (0, 1000)",
+      "gamma (2.5, 200)",
+      "Pareto (3, 1200)",
+      "Weibull (1.5, 443.1)")
+)
+
+kable(format = "latex",text_mar,escape=FALSE,caption = ' Four combinations of the severity marginal distributions.',col.names = c("Marginal Distributions","$X_1$", "$X_2$"),linesep = "",align=c("c","c","c")) %>%
+  kable_styling(full_width = F, font_size=9) %>%
+  column_spec(1, border_right = F,width = "11.5em") %>%
+  column_spec(2, border_right = F,width = "8.5em") %>%
+  column_spec(3, border_right = F,width = "9.5em") %>%
+  row_spec(0,bold=TRUE) %>%
+  row_spec(1:3, hline_after = TRUE)
+```
+
+
+## Simulation Results
+\label{sec:simre}
+
+### Comparing the impact of dependence parameters 
+\label{sec:BGCM}
+
+We generate data for the simulation study based on the four combinations of the severity marginal distributions listed in Table \ref{tab:mar}. A bivariate Gaussian copula is used to join a couple of severity marginal distributions ($X_1,X_2$). The Spearman's rank correlation coefficient of the Gaussian copula, $\rho_S (X_1,X_2)$, takes values of -0.8, -0.4, 0, 0.4, and 0.8 for comparison purposes. When $\rho_S (X_1,X_2)=0$, the model is assumed to be the independence model.
+
+Figure \ref{fig:sr1} shows the impact of the dependence parameter $\rho_S$ on the deductible cost and $CR$ using the four marginal combinations. We can see that when $\rho_S$ is negative, the deductible cost of a dependence model is higher than that of the independence model (positive $CR$); and when $\rho_S$ is positive, the deductible cost of a dependence model is lower than that of the independence model (negative $CR$); see Proposition \ref{th1} in Section \ref{sec: prop} for theoretical explanations. Additionally, when $\rho_S$ is positive (0.4 and 0.8), a stronger positive dependence leads to a lower deductible cost and $CR$. However, when $\rho_S$  is negative (-0.4 and -0.8), a stronger negative dependence leads to a higher deductible cost and $CR$; see Proposition \ref{th2} in Section \ref{sec: prop} for theoretical explanations. Lastly, as $d$ increases, the gap between the deductible costs of a dependence model and that of an independence model increases first and then decreases. For an extreme case, if we allow $d$ to increase to infinity (all costs will be paid by the policyholder), then the gap will be reduced to zero ($CR=0$), as explained by Proposition \ref{th3} in Section \ref{sec: prop}. 
+
+One of the primary objectives of risk theory is to model the distribution of total claim costs for portfolios of policies to make business decisions regarding various aspects of insurance contracts. We also investigate the linear approximations of deductible costs for readers interested in the analytical result and calculation. We derive three approximations of $E~\min(X_1+X_2, d)$ using the Trapezoidal Rule [@chiou1978critical]; see Section 9 of the supplementary material for more details.
+
+```{r sr1, message = FALSE, echo=FALSE, warning=FALSE, fig.align='center',fig.height=9,out.width='100%',fig.cap='\\ Deductible costs and Cost Relativities of four Gaussian copula models with five dependence parameters.'}
+
+load("simulationstudy.RData")
+# Uniform
+
+upper3<-11
+par(fig=c(0,0.52,0.65,1), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp[1:upper3,3], ylab="Deductible Cost",xlab="",type = "l",main=" Deductible Costs",ylim=c(0,1.01*udmax))
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,4],  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,5],  col="red", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,1],  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,2],  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+legend("topleft", legend=c("rho=-0.8","rho=-0.4","rho=0","rho=0.4","rho=0.8"),col=c("blue","blue","black","red","red"),lty = c(2,1,1,1,2), cex=0.65,bty="n")
+
+par(fig=c(0.48,1,0.65,1), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp[1:upper3,5]/LimitExp[1:upper3,3]-1, lty=2, type="l", col="red", main="Cost Relativities", ylab="CR",xlab="",ylim = c(-0.15, 0.15))
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,4]/LimitExp[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,rep(0,length(dparm[1:upper3]*udmax)),  col="black")
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,1]/LimitExp[1:upper3,3]-1,  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp[1:upper3,2]/LimitExp[1:upper3,3]-1,  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+mtext("Marginals 1", side = 3,line =-3.5,outer = TRUE, cex = 0.75)
+# gamma
+par(fig=c(0,0.52,0.435,0.79), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,3], type = "l",ylab="Deductible Cost",xlab="",ylim=c(0,1.01)*udmax)
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,4],  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,5],  col="red", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,1],  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,2],  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+par(fig=c(0.48,1,0.435,0.79), new=TRUE) 
+plot(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,5]/LimitExp_g[1:upper3,3]-1, lty=2,ylab="CR",xlab="", type="l", col="red", ylim = c(-0.15, 0.15))
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,4]/LimitExp_g[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,rep(0,length(dparm[1:upper3]*udmax)),  col="black")
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,1]/LimitExp_g[1:upper3,3]-1,  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,2]/LimitExp_g[1:upper3,3]-1,  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+mtext("Marginals 2", side = 3,line =-13.4,outer = TRUE, cex = 0.75)
+# Pareto
+par(fig=c(0,0.52,0.22,0.575), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,3], type = "l", ylab="Deductible Cost", xlab = "",ylim=c(0,1.01)*udmax)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,4],  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,5],  col="red", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,1],  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,2],  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+par(fig=c(0.48,1,0.22,0.575), new=TRUE) 
+plot(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,5]/LimitExp_p[1:upper3,3]-1, lty=2, type="l",ylab="CR", col="red", xlab = "", ylim = c(-0.15, 0.15))
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,4]/LimitExp_p[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,rep(0,length(dparm[1:upper3]*udmax)),  col="black")
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,1]/LimitExp_p[1:upper3,3]-1,  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,2]/LimitExp_p[1:upper3,3]-1,  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+mtext("Marginals 3", side = 3,line =-22.8,outer = TRUE, cex = 0.75)
+#Weibull
+par(fig=c(0,0.52,0,0.36), new=TRUE) 
+plot(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,3], type = "l",ylab="Deductible Cost", xlab = "Combined Deductible: d ($)",ylim=c(0,1.01)*udmax)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,4],  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,5],  col="red", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,1],  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,2],  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+par(fig=c(0.48,1,0,0.36), new=TRUE) 
+plot(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,5]/LimitExp_w[1:upper3,3]-1, lty=2, type="l",ylab="CR", col="red", xlab = "Combined Deductible: d ($)", ylim = c(-0.15, 0.15))
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,4]/LimitExp_w[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,rep(0,length(dparm[1:upper3]*udmax)),  col="black")
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,1]/LimitExp_w[1:upper3,3]-1,  col="blue", lty=2)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,2]/LimitExp_w[1:upper3,3]-1,  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+mtext("Marginals 4", side = 3,line =-32.6,outer = TRUE, cex = 0.75)
+
+#save(dparm,udmax,LimitExp_w,LimitExp_p,LimitExp_g,LimitExp,covXY,LimitExpt_p,LimitExpc_p,LimitExpg_p,LimitExpf_p,LimitExpt_w,LimitExpc_w,LimitExpg_w,LimitExpf_w,LimitExpApprox.1p,LimitExpApprox.2p,LimitExpApprox.3p,Ratio.1p,Ratio.2p,Ratio.3p,LimitExpApprox.1w,LimitExpApprox.2w,LimitExpApprox.3w,Ratio.1w,Ratio.2w,Ratio.3w,file = "simulationstudy.RData")
+```
+
+### Comparing the impact of different copulas
+\label{sec:DC}
+
+We examine the impact of different copulas on $CR$ in this section by considering positive dependence parameters ($\rho_S =0.4$ and $\rho_S =0.8$) and heavy tail distributions in the form of Pareto (Marginals 3) distributions and Weibull (Marginals 4) distributions. Five widely studied copulas, Gaussian, Student-t, Clayton, Frank, and Gumbel are applied for comparison purposes. 
+
+```{r copulasF, message = FALSE,echo=FALSE, warning=FALSE, fig.align='center', fig.height=5,out.width='100%', fig.cap=' \\ Cost Relativities of five copulas.'}
+# Uniform
+
+par(fig=c(0,0.55,0.375,1), new=TRUE) 
+#0.4 pareto
+plot(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,4]/LimitExp_p[1:upper3,3]-1, lty=1, type="l",ylab="CR (Marginals 3)", col="black", xlab = "", ylim = c(-0.15, 0.01),main=TeX('$\\rho_S=0.4$'))
+lines(dparm[1:upper3]*udmax,LimitExpt_p[1:upper3,1]/LimitExp_p[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpc_p[1:upper3,1]/LimitExp_p[1:upper3,3]-1,  col="blue", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpg_p[1:upper3,1]/LimitExp_p[1:upper3,3]-1,  col="green", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpf_p[1:upper3,1]/LimitExp_p[1:upper3,3]-1,  col="orange", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+par(fig=c(0.45,1,0.375,1), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,5]/LimitExp_p[1:upper3,3]-1, lty=1, type="l",ylab="", col="black", xlab = "", ylim = c(-0.15, 0.01),main=TeX('$\\rho_S=0.8$'))
+lines(dparm[1:upper3]*udmax,LimitExpt_p[1:upper3,2]/LimitExp_p[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpc_p[1:upper3,2]/LimitExp_p[1:upper3,3]-1,  col="blue", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpg_p[1:upper3,2]/LimitExp_p[1:upper3,3]-1,  col="green", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpf_p[1:upper3,2]/LimitExp_p[1:upper3,3]-1,  col="orange", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+legend("topright", legend=c("Gaussian","Student-t","Clayton","Gumbel","Frank"),col=c("black","red","blue","green","orange"),lty = c(1,1,1,1,1), cex=0.65,bty = "n")
+
+
+#0.4 Weibull
+par(fig=c(0,0.55,0,0.625), new=TRUE)
+
+plot(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,4]/LimitExp_w[1:upper3,3]-1, lty=1, type="l",ylab="CR (Marginals 4)", col="black", xlab = "Combined Deductible: d ($)", ylim = c(-0.15, 0.01))
+lines(dparm[1:upper3]*udmax,LimitExpt_w[1:upper3,1]/LimitExp_w[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpc_w[1:upper3,1]/LimitExp_w[1:upper3,3]-1,  col="blue", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpg_w[1:upper3,1]/LimitExp_w[1:upper3,3]-1,  col="green", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpf_w[1:upper3,1]/LimitExp_w[1:upper3,3]-1,  col="orange", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+#0.8 Weibull
+par(fig=c(0.45,1,0,0.625), new=TRUE) 
+plot(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,5]/LimitExp_w[1:upper3,3]-1, lty=1, type="l",ylab="", col="black", xlab = "Combined Deductible: d ($)", ylim = c(-0.15, 0.01))
+lines(dparm[1:upper3]*udmax,LimitExpt_w[1:upper3,2]/LimitExp_w[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpc_w[1:upper3,2]/LimitExp_w[1:upper3,3]-1,  col="blue", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpg_w[1:upper3,2]/LimitExp_w[1:upper3,3]-1,  col="green", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExpf_w[1:upper3,2]/LimitExp_w[1:upper3,3]-1,  col="orange", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+```
+
+Figure \ref{fig:copulasF} shows the impact of different copulas on $CR$ using Marginals 3 and 4. The two plots on the top are based on the copula models with Pareto marginals, while the two bottom plots are based on copula models with Weibull marginals. Compared to the other four copulas, the Clayton copula leads to a sharp decrease of $CR$ and then a slow increase when $d$ increases from 0 to 1000. A reason is that the Clayton copula is an asymmetric Archimedean copula, exhibiting greater dependence in the left tail than in the right tail. Thus the $CR$ is very sensitive to small $d$ (in the left tail) using the Clayton copula. 
+
+On the contrary, the Gumbel copula, another asymmetric Archimedean copula, exhibits greater dependence in the right tail than in the left tail. Hence the $CR$ decreases with $d$ slowly when $d$ is small. For insurance contracts, $d$ is mostly in the left tail of the aggregate loss distribution. So copulas with left tail dependence tend to have larger values of $|CR|$ than copulas without left tail dependence.  
+
+Comparing the left and right panels in Figure \ref{fig:copulasF}, we also notice that stronger dependence leads to larger values of $|CR|$, which is explained in Proposition \ref{th2} in Section \ref{sec: prop}. In summary, the level of dependence ($\rho_S$) is more important than the form of the copula to calculate the deductible costs.
+
+### Comparing the impact of marginal distributions
+\label{sec:CMD}
+
+Data generated in Section \ref{sec:BGCM} is also used in this analysis. However, we only consider positive dependence parameters $\rho_S =0.4$ and $\rho_S =0.8$ to be consistent with real insurance practice. In Figure \ref{fig:marginal}, we show the impact of different marginal distributions on both the deductible costs (top figures) and $CR$ (bottom figures). We can see that the deductible costs and $CR$ vary by marginal distributions, and the difference in $CR$ becomes larger when the dependence is stronger. It suggests that practitioners should choose marginal distributions carefully, especially when the dependence between risks is strong.
+
+```{r marginal, message = FALSE,echo=FALSE, warning=FALSE, fig.align='center', out.width='100%', fig.height=4.5, fig.cap=' \\ Deductible costs and Cost Relativities of four models with different marginals.'}
+library(latex2exp)
+
+par(fig=c(0,0.55,0.35,1), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp[1:upper3,4], type = "l", ylab="Deductible Cost", xlab = "",ylim=c(0,1.01*udmax),main=TeX('$\\rho_S=0.4$'))
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,4],  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,4],  col="orange", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,4],  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+legend("topleft", legend=c("Marginals 1","Marginals 2","Marginals 3","Marginals 4"),col=c("black","red","orange","blue"),lty = c(1,1,1,1), cex=0.6,bty="n")
+
+par(fig=c(0.45,1,0.35,1), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp[1:upper3,5], type = "l", ylab="", xlab = "",ylim=c(0,1.01*udmax),main=TeX('$\\rho_S=0.8$'))
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,5],  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,5],  col="orange", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,5],  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+par(fig=c(0,0.55,0,0.65), new=TRUE)
+plot(dparm[1:upper3]*udmax,LimitExp[1:upper3,4]/LimitExp[1:upper3,3]-1, lty=1, type="l",ylab="CR", col="black", xlab = "Combined Deductible: d ($)", ylim = c(-0.15, 0.01))
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,4]/LimitExp_g[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,4]/LimitExp_p[1:upper3,3]-1,  col="orange", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,4]/LimitExp_w[1:upper3,3]-1,  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+par(fig=c(0.45,1,0,0.65), new=TRUE) 
+plot(dparm[1:upper3]*udmax,LimitExp[1:upper3,5]/LimitExp[1:upper3,3]-1, lty=1, type="l",ylab="", col="black", xlab = "Combined Deductible: d ($)", ylim = c(-0.15, 0.01))
+lines(dparm[1:upper3]*udmax,LimitExp_g[1:upper3,5]/LimitExp_g[1:upper3,3]-1,  col="red", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_p[1:upper3,5]/LimitExp_p[1:upper3,3]-1,  col="orange", lty=1)
+lines(dparm[1:upper3]*udmax,LimitExp_w[1:upper3,5]/LimitExp_w[1:upper3,3]-1,  col="blue", lty=1)
+grid(nx = NULL, ny = NULL, col = "lightgray", lty = "dotted")
+
+```
+
+
+# PROPOSITIONS OF COMBINED DEDUCTIBLE COSTS
+\label{sec: prop}
+
+In Section \ref{sec:app} and Section \ref{sec:sim}, we have seen several research findings that shed light on the importance of dependence modelling of combined deductible costs for bundled insurance contracts. For example, in Section \ref{sec:app}, $CR$ is non-positive in all cases and the deductible costs can be affected by the choice of copulas and marginal distributions. Also, in Section \ref{sec:sim}, the level of dependence ($\rho_S$) is more important than the choice of copulas and marginal distributions to calculate the deductible costs. The current findings lack theoretical support, so they are difficult to understand. However, actuarial science, essential to the sustainable development of the insurance industry, cannot thrive without practitioners having a solid mathematics foundation. Taking advantage of the well-known theories of stop-loss premiums [@denuit2006actuarial], this section presents general properties of joint distributions that can lead to materially different prices, and shows how the dependence structure affects insurance pricing of combined deductibles. Propositions introduced in this section help explain the research findings mentioned above and help practitioners understand the importance of dependence modelling theoretically in the combined deductible ratemaking. Also, for future research on the combined deductible ratemaking, these propositions provide theoretical support to different types of dependence models. With these general propositions, researchers can identify problems and solve them in other areas of actuarial science. For example, we could investigate the impact of applying a combined deductible to medical expenditures with strong associations as studied by @frees2013actuarial. All propositions are studied in a bivariate case, which constructs a theoretical framework for the study of multivariate deductible costs. 
+
+<!-- ## Concept of Quadrant Dependence -->
+
+To describe the propositions, we start with four definitions. The first definition is about the concept of positive quadrant dependence introduced by @lehmann1966some. The random couple $\boldsymbol{X}=(X_1, X_2)$ is positively quadrant dependent (PQD) if 
+\begin{equation}
+     H_{X_1,X_2}(x_1,x_2) :=P(X_1 \le x_1,X_2 \le x_2)- P(X_1 \le x_1) P(X_2 \le x_2) \ge 0,
+     \label{subPQDa}  
+\end{equation}
+\noindent
+for all $x_1,x_2 \in \mathbb{R}$. Similarly, $\boldsymbol{X}$ is negatively quadrant dependent (NQD) if $H_{X_1,X_2}(x_1,x_2) \le 0$. According to Equation (\ref{subPQDa}), $\boldsymbol{X}$ is NQD if, and only if $(X_1, -X_2)$ is PQD. In view of this duality, we shall mainly focus on PQD in the following analysis. 
+
+The second definition is about the PQD condition of a copula. Let $C(u_1,u_2)$ be the copula of the random couple $\boldsymbol{X}=(X_1, X_2)$. Then, $C(u_1,u_2)$ is PQD if
+\begin{equation}
+     C(u_1,u_2)- u_1u_2 \ge 0,
+     \label{PQDcopula}  
+\end{equation}
+\noindent
+for all $u_1,u_2 \in [0,1]$. Based on Equation (\ref{subPQDa}) and Equation (\ref{PQDcopula}), $\boldsymbol{X}$ is PQD (resp. NQD) if, and only if its copula $C(u_1,u_2)$ is PQD (resp. NQD); see Corollary 5.3.4 in @denuit2006actuarial. We summarise the PQD and NQD conditions [@salvadori2007extremes; @nelsen2007introduction] with respect to $\rho_S$ (Spearman's rank correlation coefficient), $\tau$ (Kendall rank correlation coefficient), and $\theta$ (dependence parameter of a copula) for some common copulas in Section 10 of the supplementary material. In many cases, the insurance losses among different coverages are PQD. For example, if a Gaussian copula or Student-t copula is fitted with $0 \leq \rho_S \leq 1$ (or equivalently, $0 \leq \tau \leq 1$ and $0 \leq \theta \leq 1$), the copula and hence the random couple of losses are PQD. 
+
+The third definition is about the correlation order. Consider two random couples $\boldsymbol{X}=(X_1,X_2)$ and $\boldsymbol{Y}=(Y_1,Y_2)$ in the Fr$\acute{\text{e}}$chet space $\mathcal{R}_2(F_1, F_2)$. The Fr$\acute{\text{e}}$chet space gathers together all the probability distributions with fixed univariate marginals $(F_1, F_2)$. Elements in a given Fr$\acute{\text{e}}$chet space only differ in their dependence structures, and not in their marginal behaviours. If two joint cumulative distribution functions $F_{\boldsymbol{X}}(x_1,x_2)$ and $F_{\boldsymbol{Y}}(x_1,x_2)$ satisfy
+\begin{equation*}
+     F_{\boldsymbol{X}}(x_1,x_2) \le F_{\boldsymbol{Y}}(x_1,x_2),
+     \label{coorder}  
+\end{equation*}
+\noindent
+for all $x_1, x_2  \in \mathbb{R}$. Then $\boldsymbol{Y}$ is said to be larger than $\boldsymbol{X}$ in correlation order denoted by $\boldsymbol{X} \preceq_{\text{CORR}} \boldsymbol{Y}$.  
+
+The last definition is about the integrated difference in pricing ($IDIP$) of the random couple $\boldsymbol{X}=(X_1, X_2)$, which is defined as
+\begin{equation*}
+    IDIP =\int^\infty_0 |E \min(X_1^{\bot} +X_2^{\bot}, t)- E \min(X_1+X_2, t)| \ dt.
+     \label{IDIP}  
+\end{equation*}
+We regard $IDIP$ as the overall difference in pricing of combined deductibles between the dependence model and the independence model. A larger value of $IDIP$ means larger overall difference in deductible costs between dependence and independence modelling.
+
+
+<!-- ## Propositions of Deductible Costs -->
+
+Based on the four definitions above and theorems of dependence in Section 5 and Section 6 of @denuit2006actuarial, we introduce the following propositions of deductible costs. Detailed proofs are provided in Section 10 of the supplementary material.
+
+\begin{proposition}
+\label{th1}
+If the random couple $\boldsymbol{X}=(X_1, X_2)$ is PQD, then $c_d^{dep} \le c_d^{ind}$ (i.e. $CR \le 0$). If $\boldsymbol{X}$ is NQD, then $c_d^{dep} \ge c_d^{ind}$ (i.e. $CR \ge 0$). 
+\end{proposition}
+
+Proposition \ref{th1} explains why $CR$ is non-positive in Figures \ref{fig:phs}, \ref{fig:ratio1}, \ref{fig:lae}, and \ref{fig:4coms}. It also explains why the $LER$s based on independent assumptions are larger than those based on dependent assumptions in Table \ref{tab:LERdP}. This proposition can help practitioners compare deductible costs based on dependence modelling and independence modelling before building any models. In most cases, the losses of different coverages in a bundled insurance contract are positively correlated and satisfy the PQD condition. For example, the loss and ALAE in @frees1998understanding is PQD, so dependence modelling leads to lower deductible costs and higher premiums compared to independence modelling. If a random couple loss is NQD (rare in practice), then dependence modelling leads to higher deductible costs and lower premiums compared to independence modelling.
+
+\begin{proposition}
+\label{th2}
+If two random couples $\boldsymbol{X}=(X_1,X_2)$ and $\boldsymbol{Y}=(Y_1,Y_2)$ follow $\boldsymbol{X} \preceq_{\text{CORR}} \boldsymbol{Y}$, then $CR_{\boldsymbol{X}} \ge CR_{\boldsymbol{Y}}$.
+\end{proposition}
+
+$CR_{\boldsymbol{X}}$ (resp. $CR_{\boldsymbol{Y}}$) is the cost relativity ratio calculated for $\boldsymbol{X}$ (resp. $\boldsymbol{Y}$). The random couple $\boldsymbol{X^{\bot}}=(X^{\bot}_1,X^{\bot}_2)$ is an independent version of $\boldsymbol{X}$, which means $X^{\bot}_1$ and $X^{\bot}_2$ are independent. Positive correlation order means $\boldsymbol{X^{\bot}} \preceq_{\text{CORR}} \boldsymbol{X}$, which is equivalent to $\boldsymbol{X}$ is PQD; see Equation (\ref{subPQDa}). Negative correlation order means $\boldsymbol{X} \preceq_{\text{CORR}} \boldsymbol{X^{\bot}}$, which is equivalent to $\boldsymbol{X}$ is NQD. To compare correlation order between risks easily, we also have the following relationship using three correlation coefficients, including $\rho_P$ is the Pearson correlation coefficient, $\rho_S$ is the Spearman's rank correlation coefficient, and $\tau$ is the Kendall rank correlation coefficient; see Property 6.2.14 in @denuit2006actuarial. If $\boldsymbol{X} \preceq_{\text{CORR}} \boldsymbol{Y}$, then we have
+
+$$
+\begin{array}{rl}
+\rho_P(X_1,X_2) &\le \rho_P(Y_1,Y_2),\\
+\\
+\tau(X_1,X_2) &\le \tau(Y_1,Y_2),\\
+\\
+\rho_S(X_1,X_2) &\le \rho_S(Y_1,Y_2).\\
+\end{array}
+$$
+
+Proposition \ref{th2} indicates that a stronger dependence structure leads to a larger pricing difference. It explains why bigger positive $\rho_S$ (PQD) or smaller negative $\rho_S$ (NQD) leads to bigger values of $|CR|$ in Figures \ref{fig:sr1}, \ref{fig:copulasF}, and \ref{fig:marginal}. This proposition helps practitioners compare deductible costs based on different forms of dependence through checking the three classic association coefficients. For example, in Section \ref{sec:simre}, without doing any calculation we know that the deductible cost of $\rho_S=0.8$ is smaller than that of $\rho_S=0.4$. Hence, this proposition can further guide practitioners to judge the necessity of dependence modelling. For example, intuitively it is more necessary to consider dependence modelling when $\rho_S(X_1,X_2)$ is 0.9 than when $\rho_S(X_1,X_2)$ is 0.1, since building a dependence model can be expensive and time-consuming in practice.    
+
+\begin{proposition}
+\label{th3}
+Define $A=X_1^{\bot} +X_2^{\bot}$ and $B=X_1+X_2$. The cumulative distribution functions (CDFs) $F_{A}(a)$ and $F_{B}(b)$ at least cross once. If they only cross once, the difference in pricing $|E \min(A, d)- E \min(B, d)|$ is maximised at the intersection of two CDFs.
+\end{proposition}
+
+ Proposition \ref{th3} is related to Figure \ref{fig:sr1}, in which the difference in deductible costs between a dependence model and the independence model is maximised when two CDFs intersect. Also, we can see that the value of $|CR|$ increases to the maximum point and then decreases as the combined deductible $d$ increases. If $d$ is set to be positive infinity, then the difference in deductible costs between a dependence model and the independence model will be zero (i.e. $CR=0$). This proposition helps practitioners understand that the difference in deductible costs between dependence and independence modelling is also affected by the size of a combined deductible. For example, in Figure \ref{fig:sr1}, when the combined deductible tends to zero, the difference in pricing between dependence and independence modelling is negligible. However, when the combined deductible is set to be at the intersection of two CDFs, the difference in pricing is maximised and dependence modelling becomes notable.
+
+\begin{proposition}
+\label{th4}
+If $\boldsymbol{X}$ is PQD, then $IDIP= \sigma (X_1,X_2)$. If $\boldsymbol{X}$ is NQD, then $IDIP= -\sigma (X_1,X_2)$.
+\end{proposition}
+
+Proposition \ref{th4} suggests that $IDIP$ is only based on the covariance $(\sigma$) of $X_1$ and $X_2$. In other words, larger positive covariance (resp. smaller negative covariance) between variables leads to a larger overall difference in pricing under the PQD (resp. NQD) assumption. From this perspective, Proposition \ref{th2} and Proposition \ref{th4} are are mutually supportive. We also find that $IDIP$ equals the integrated stop-loss distance introduced in Section 9.8 of \cite{denuit2006actuarial}. This proposition helps practitioners understand that the overall difference in deductible costs between dependence and independence modelling is measured by |$\sigma (X_1,X_2)$|. If $|\sigma (X_1,X_2)|$ is larger, then generally speaking, it will be more important to consider dependence modelling.
+
+
+# CONCLUSION
+\label{sec:conclusion}
+
+In this paper, we study the cost of combined deductibles under dependence from three perspectives, three applications on real data sets, a simulation study, and several theoretical propositions.
+
+The theoretical propositions present general properties of joint distributions that can lead to materially different prices. The theoretical results explain the observations in both the empirical applications and simulation studies. They also provide insights into the understanding of how the dependence structure affects insurance pricing of combined deductibles. The difference in deductible costs between dependence and independence modelling is affected by the size of combined deductibles and the correlation between risks. With these general propositions, researchers can identify problems and solve them in other areas of actuarial science.
+
+In the simulation study, a variety of dependence parameters, marginal distributions, and copulas are studied. The results are consistent with theoretical propositions and suggest that the strength of dependence is more important than the type of copula dependence function. It is also worth noting that the dependence structure and marginal distributions should be selected carefully in practice, which could lead to different deductible costs.
+
+The results of three applications (commercial insurance, reinsurance, and personal insurance) show the importance of dependence modelling for calculating deductible costs. According to the theoretical calculations, when the dependence parameter is positive, deductible costs calculated by dependence models are lower than those calculated by benchmark models that assume independence. In the three applications, all dependence parameters are positive. The deductible costs are reduced by approximately 6 to 23 percent for commercial insurance, up to 8 percent for reinsurance, and 10 to 23 percent for pet insurance when dependence models are used compared to the benchmark models that assume independence.
+
+The three perspectives above convey a similar conclusion that deductible costs calculated by dependence models are different from those calculated by the independence models, and the difference can be as large as 23 percent. The results shed light on the importance of dependence modelling of combined deductible costs for bundled insurance contracts. 
+
+For future research, we summarise the following three directions. Firstly, more types of copulas, such as vine copulas, can be applied to study combined deductible ratemaking. Vine copulas are well know for modelling complex dependency patterns through a rich variety of bivariate copulas in a tree structure; see @allen2017risk. Secondly, the dependence modelling technique introduced in this paper can also be applied to study the deductible cost of an all-peril insurance policy. For example, a combined deductible (also called all-peril deductible) under an all-peril homeowners insurance policy covers the aggregate loss of all perils such as fire and smoke, lightning strikes, windstorms, and hail. Lastly, since the deductible cost is undertaken by policyholders, deductible costs based on dependence modelling can be further used to analyze the effect of combined deductibles on consumer behaviour. For example, it is well known that adverse selection may take place if health insurance policies are offered with the option to take a deductible in exchange of a premium reduction; see for example @van1981demand. 
+
+# Acknowledgements {-}
+
+We would like to express our deepest thanks to the reviewer, Francis KC Hui, and Xi Xin for valuable comments.
+
+# References
